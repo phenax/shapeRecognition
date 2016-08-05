@@ -76,4 +76,4 @@ gulp.task('buildJS', ()=> compileJS());
 gulp.task('watchJS', watchJS);
 
 
-gulp.task('default', ['watchJS', 'watchSASS']);
+gulp.task('default', ['watchJS']);
