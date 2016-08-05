@@ -20,7 +20,7 @@ var EdgeDetector = exports.EdgeDetector = function () {
 
 	/**
   * EdgeDetector
-  * 
+  *
   * @param  {Object} config  Configuration
   */
 	function EdgeDetector(config) {
@@ -46,6 +46,8 @@ var EdgeDetector = exports.EdgeDetector = function () {
 		if (config.video) {
 			this.isWebCam = true;
 			this.$video = config.video;
+		} else {
+			this.imageSrc = config.image;
 		}
 
 		this.setDimensions();
@@ -83,6 +85,8 @@ var EdgeDetector = exports.EdgeDetector = function () {
 				this.callWebCam(function () {
 					window.requestAnimationFrame(_this.renderVideo);
 				});
+			} else {
+				this.loadImage(this.imageSrc);
 			}
 
 			this.image = new _ImageProcessor.ImageProcessor({
@@ -91,15 +95,37 @@ var EdgeDetector = exports.EdgeDetector = function () {
 		}
 
 		/**
+   * Loads an image to the canvas and renders edges
+   *
+   * @param  {string} src  The location of the image
+   */
+
+	}, {
+		key: 'loadImage',
+		value: function loadImage(src) {
+			var _this2 = this;
+
+			// Create an image object
+			var img = new Image();
+
+			img.src = src;
+
+			// After image is done loading, render it on the canvas
+			img.onload = function () {
+				_this2.renderImage(img);
+			};
+		}
+
+		/**
    * Asks permission for the webcam
-   * 
+   *
    * @param  {Function} callback  Callback fired when access is granted
    */
 
 	}, {
 		key: 'callWebCam',
 		value: function callWebCam(callback) {
-			var _this2 = this;
+			var _this3 = this;
 
 			// Broswer prefixes
 			navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -112,9 +138,11 @@ var EdgeDetector = exports.EdgeDetector = function () {
 
 			// User allowed access
 			function (stream) {
+
 				var dataUrl = window.URL.createObjectURL(stream);
 
-				_this2.$video.src = dataUrl;
+				// Load video
+				_this3.$video.src = dataUrl;
 
 				callback();
 			},
@@ -126,22 +154,60 @@ var EdgeDetector = exports.EdgeDetector = function () {
 		}
 
 		/**
+  * Processes one frame on the canvas and detects their edges
+  */
+
+	}, {
+		key: 'frameProcessing',
+		value: function frameProcessing() {
+
+			// Reloads the canvas into the image processor
+			this.image.reload();
+
+			// Marks the edges of the image
+			this.image.edgeDetection();
+
+			// Renders the final image on the canvas
+			this.image.renderMap();
+		}
+
+		/**
    * Renders the video on the canvas
    */
 
 	}, {
 		key: 'renderVideo',
 		value: function renderVideo() {
+
+			// Draw the video frame on the board
 			this.ctx.drawImage(this.$video, 0, 0, this.dimen.width, this.dimen.height);
 
-			this.image.reload();
+			// Process current frame
+			this.frameProcessing();
 
-			this.image.edgeDetection();
-
-			this.image.renderMap();
-
+			// Next frame
 			window.requestAnimationFrame(this.renderVideo);
 		}
+
+		/**
+   * Renders an image on the canvas
+   *
+   * @param  {Image} img  The image object to load to the canvas
+   */
+
+	}, {
+		key: 'renderImage',
+		value: function renderImage(img) {
+
+			// Draw the image on the canvas
+			this.ctx.drawImage(img, 0, 0, this.dimen.width, this.dimen.height);
+
+			// Process this frame(only once)
+			this.frameProcessing();
+		}
+	}, {
+		key: 'matchTemplate',
+		value: function matchTemplate(config) {}
 	}]);
 
 	return EdgeDetector;
@@ -177,7 +243,7 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 	/**
   * ImageProcessor
-  * 
+  *
   * @param  {Object} config  Configuration
   */
 	function ImageProcessor(config) {
@@ -202,11 +268,11 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 		/**
    * Finds the color intensity of a pixel
-   * 
+   *
    * @param  {Number} r  Red color value
    * @param  {Number} g  Green color value
    * @param  {Number} b  Blue color value
-   * 
+   *
    * @return {Number}   Pixel intensity
    */
 
@@ -218,7 +284,7 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 		/**
    * Maps through all the pixels
-   * 
+   *
    * @param  {Function} callback  Callback that modifies the pixels
    */
 
@@ -374,7 +440,7 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 		/**
    * Finds the average intensity of all the pixels on the canvas
-   * 
+   *
    * @return {Number}  Average Intensity
    */
 
@@ -411,9 +477,9 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 		/**
    * Finds the brightness required mapped to the intensity
-   * 
+   *
    * @param  {Number} intensity Average intensity of image
-   * 
+   *
    * @return {Number}           Brightness required
    */
 
@@ -425,9 +491,9 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 		/**
    * Finds the edge detection factor required mapped to the intensity
-   * 
+   *
    * @param  {Number} intensity Average intensity of image
-   * 
+   *
    * @return {Number}           Edge detection factor required
    */
 
@@ -446,12 +512,32 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 var _EdgeDetector = require('./EdgeDetector');
 
+var template = new _EdgeDetector.EdgeDetector({
+    canvas: document.getElementById('frame'),
+    image: './img/hands.png',
+    dimen: {
+        width: 100,
+        height: 100
+    }
+});
+
+template.start();
+
 var edgeDetector = new _EdgeDetector.EdgeDetector({
     canvas: document.getElementById('edgeDetection'),
     video: document.getElementById('showWebCam'),
     dimen: {
         width: 300,
         height: 200
+    }
+});
+
+edgeDetector.matchTemplate({
+    src: './img/hands.png',
+    aspectRatio: 1,
+    dimen: {
+        from: 50,
+        to: 200
     }
 });
 

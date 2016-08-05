@@ -19,7 +19,7 @@ export class ImageProcessor {
 
 	/**
 	 * ImageProcessor
-	 * 
+	 *
 	 * @param  {Object} config  Configuration
 	 */
     constructor(config) {
@@ -44,11 +44,11 @@ export class ImageProcessor {
 
     /**
      * Finds the color intensity of a pixel
-     * 
+     *
      * @param  {Number} r  Red color value
      * @param  {Number} g  Green color value
      * @param  {Number} b  Blue color value
-     * 
+     *
      * @return {Number}   Pixel intensity
      */
     colorIntensity(r, g, b) {
@@ -58,7 +58,7 @@ export class ImageProcessor {
 
     /**
      * Maps through all the pixels
-     * 
+     *
      * @param  {Function} callback  Callback that modifies the pixels
      */
     colorMapping(callback) {
@@ -196,7 +196,7 @@ export class ImageProcessor {
 
 	/**
 	 * Finds the average intensity of all the pixels on the canvas
-	 * 
+	 *
 	 * @return {Number}  Average Intensity
 	 */
 	getAverageIntensity() {
@@ -228,12 +228,12 @@ export class ImageProcessor {
 
 	/**
 	 * Finds the brightness required mapped to the intensity
-	 * 
+	 *
 	 * @param  {Number} intensity Average intensity of image
-	 * 
+	 *
 	 * @return {Number}           Brightness required
 	 */
-	brightnessFactor(intensity) { 
+	brightnessFactor(intensity) {
 		return ((MAX_BRIGHT - MIN_BRIGHT) * (intensity - MIN_INTENSITY) /
 			(MAX_INTENSITY - MIN_INTENSITY)) + MIN_BRIGHT;
 	}
@@ -241,13 +241,18 @@ export class ImageProcessor {
 
 	/**
 	 * Finds the edge detection factor required mapped to the intensity
-	 * 
+	 *
 	 * @param  {Number} intensity Average intensity of image
-	 * 
+	 *
 	 * @return {Number}           Edge detection factor required
 	 */
 	edgeDetectionFactor(intensity){
 		return ((MAX_FACTOR - MIN_FACTOR) * (intensity - MIN_INTENSITY) /
 			(MAX_INTENSITY - MIN_INTENSITY)) + MIN_FACTOR;
 	}
+
+
+
+
+    
 }

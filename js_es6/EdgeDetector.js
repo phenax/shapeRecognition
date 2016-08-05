@@ -12,7 +12,7 @@ export class EdgeDetector {
 
 	/**
 	 * EdgeDetector
-	 * 
+	 *
 	 * @param  {Object} config  Configuration
 	 */
 	constructor(config) {
@@ -36,6 +36,8 @@ export class EdgeDetector {
 		if(config.video) {
 			this.isWebCam= true;
 			this.$video= config.video;
+		} else {
+			this.imageSrc= config.image;
 		}
 
 		this.setDimensions();
@@ -68,6 +70,8 @@ export class EdgeDetector {
 			this.callWebCam(()=> {
 				window.requestAnimationFrame(this.renderVideo);
 			});
+		} else {
+			this.loadImage(this.imageSrc);
 		}
 
 		this.image= new ImageProcessor({
@@ -76,10 +80,30 @@ export class EdgeDetector {
 	}
 
 
+	/**
+	 * Loads an image to the canvas and renders edges
+	 *
+	 * @param  {string} src  The location of the image
+	 */
+	loadImage(src) {
+
+		// Create an image object
+		const img= new Image();
+
+		img.src= src;
+
+		// After image is done loading, render it on the canvas
+		img.onload= ()=> {
+			this.renderImage(img);
+		};
+
+	}
+
+
 
 	/**
 	 * Asks permission for the webcam
-	 * 
+	 *
 	 * @param  {Function} callback  Callback fired when access is granted
 	 */
 	callWebCam(callback) {
@@ -98,8 +122,10 @@ export class EdgeDetector {
 
 			// User allowed access
 			(stream)=> {
+
 				const dataUrl= window.URL.createObjectURL(stream);
 
+				// Load video
 				this.$video.src= dataUrl;
 
 				callback();
@@ -113,18 +139,62 @@ export class EdgeDetector {
 	}
 
 
+
+
+	/**
+	* Processes one frame on the canvas and detects their edges
+	*/
+	frameProcessing() {
+
+		// Reloads the canvas into the image processor
+		this.image.reload();
+
+		// Marks the edges of the image
+		this.image.edgeDetection();
+
+		// Renders the final image on the canvas
+		this.image.renderMap();
+	}
+
+
+
+
+
 	/**
 	 * Renders the video on the canvas
 	 */
 	renderVideo() {
+
+		// Draw the video frame on the board
 		this.ctx.drawImage(this.$video, 0, 0, this.dimen.width, this.dimen.height);
 
-		this.image.reload();
+		// Process current frame
+		this.frameProcessing();
 
-		this.image.edgeDetection();
-
-		this.image.renderMap();
-
+		// Next frame
 		window.requestAnimationFrame(this.renderVideo);
+	}
+
+
+
+
+	/**
+	 * Renders an image on the canvas
+	 *
+	 * @param  {Image} img  The image object to load to the canvas
+	 */
+	renderImage(img) {
+
+		// Draw the image on the canvas
+		this.ctx.drawImage(img, 0, 0, this.dimen.width, this.dimen.height);
+
+		// Process this frame(only once)
+		this.frameProcessing();
+	}
+
+
+
+	matchTemplate(config) {
+		
 	}
 }
