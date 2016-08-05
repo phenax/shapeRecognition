@@ -1,7 +1,7 @@
 {
   "name": "edge_detection",
   "version": "0.0.0",
-  "description": "wow",
+  "description": "testing shit",
   "main": "index.html",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "httt"
+    "url": "https://github.com/phenax/shapeRecognition.git"
   },
   "author": "Akshay Nair <phenax5@gmail.com>",
   "license": "Apache-2.0",
