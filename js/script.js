@@ -17,6 +17,12 @@ var _ImageProcessor = require('./ImageProcessor');
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var EdgeDetector = exports.EdgeDetector = function () {
+
+	/**
+  * EdgeDetector
+  * 
+  * @param  {Object} config  Configuration
+  */
 	function EdgeDetector(config) {
 		_classCallCheck(this, EdgeDetector);
 
@@ -44,8 +50,13 @@ var EdgeDetector = exports.EdgeDetector = function () {
 
 		this.setDimensions();
 
-		this.renderImage = this.renderImage.bind(this);
+		this.renderVideo = this.renderVideo.bind(this);
 	}
+
+	/**
+  * Sets the canvas and $video element dimensions
+  */
+
 
 	_createClass(EdgeDetector, [{
 		key: 'setDimensions',
@@ -58,6 +69,11 @@ var EdgeDetector = exports.EdgeDetector = function () {
 				this.$video.height = this.dimen.height;
 			}
 		}
+
+		/**
+   * Starts rendering
+   */
+
 	}, {
 		key: 'start',
 		value: function start() {
@@ -65,7 +81,7 @@ var EdgeDetector = exports.EdgeDetector = function () {
 
 			if (this.isWebCam) {
 				this.callWebCam(function () {
-					window.requestAnimationFrame(_this.renderImage);
+					window.requestAnimationFrame(_this.renderVideo);
 				});
 			}
 
@@ -73,6 +89,13 @@ var EdgeDetector = exports.EdgeDetector = function () {
 				canvas: this.$canvas
 			});
 		}
+
+		/**
+   * Asks permission for the webcam
+   * 
+   * @param  {Function} callback  Callback fired when access is granted
+   */
+
 	}, {
 		key: 'callWebCam',
 		value: function callWebCam(callback) {
@@ -101,18 +124,23 @@ var EdgeDetector = exports.EdgeDetector = function () {
 				throw new Error("Something went wrong.");
 			});
 		}
+
+		/**
+   * Renders the video on the canvas
+   */
+
 	}, {
-		key: 'renderImage',
-		value: function renderImage() {
+		key: 'renderVideo',
+		value: function renderVideo() {
 			this.ctx.drawImage(this.$video, 0, 0, this.dimen.width, this.dimen.height);
 
 			this.image.reload();
 
-			this.image.customFilter(4.5, 0, 1);
+			this.image.edgeDetection();
 
 			this.image.renderMap();
 
-			window.requestAnimationFrame(this.renderImage);
+			window.requestAnimationFrame(this.renderVideo);
 		}
 	}]);
 
@@ -131,12 +159,27 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
- * Manipulate images or frames
+ * Manipulates or frames
  *
  * @author Akshay Nair<phenax5@gmail.com>
  */
 
+var MAX_INTENSITY = 100;
+var MIN_INTENSITY = 30;
+
+var MAX_BRIGHT = 25;
+var MIN_BRIGHT = 0.7;
+
+var MAX_FACTOR = 18;
+var MIN_FACTOR = 4;
+
 var ImageProcessor = exports.ImageProcessor = function () {
+
+	/**
+  * ImageProcessor
+  * 
+  * @param  {Object} config  Configuration
+  */
 	function ImageProcessor(config) {
 		_classCallCheck(this, ImageProcessor);
 
@@ -144,17 +187,41 @@ var ImageProcessor = exports.ImageProcessor = function () {
 		this.ctx = this.$canvas.getContext('2d');
 
 		this.reload();
-
-		this.colorIntensity = function (r, g, b) {
-			return 0.3 * r + 0.59 * g + 0.11 * b;
-		};
 	}
+
+	/**
+  * Reload the image on canvas
+  */
+
 
 	_createClass(ImageProcessor, [{
 		key: 'reload',
 		value: function reload() {
 			this.imageData = this.ctx.getImageData(0, 0, this.$canvas.width, this.$canvas.height);
 		}
+
+		/**
+   * Finds the color intensity of a pixel
+   * 
+   * @param  {Number} r  Red color value
+   * @param  {Number} g  Green color value
+   * @param  {Number} b  Blue color value
+   * 
+   * @return {Number}   Pixel intensity
+   */
+
+	}, {
+		key: 'colorIntensity',
+		value: function colorIntensity(r, g, b) {
+			return 0.3 * r + 0.59 * g + 0.11 * b;
+		}
+
+		/**
+   * Maps through all the pixels
+   * 
+   * @param  {Function} callback  Callback that modifies the pixels
+   */
+
 	}, {
 		key: 'colorMapping',
 		value: function colorMapping(callback) {
@@ -170,6 +237,11 @@ var ImageProcessor = exports.ImageProcessor = function () {
 				}
 			}
 		}
+
+		/**
+   * Renders the modified image on the canvas
+   */
+
 	}, {
 		key: 'renderMap',
 		value: function renderMap() {
@@ -210,7 +282,7 @@ var ImageProcessor = exports.ImageProcessor = function () {
 			var intensity = void 0;
 
 			/**
-    * Desaturates each color value
+    * Desaturates a pixel
     */
 			var desat = function desat(val, i) {
 				return i * factor + val * (1 - factor);
@@ -239,6 +311,9 @@ var ImageProcessor = exports.ImageProcessor = function () {
 
 			var intensity = void 0;
 
+			/**
+    * Saturates a pixel
+    */
 			var satur = function satur(val, i) {
 				return factor * val + (1 - factor) * i;
 			};
@@ -253,8 +328,7 @@ var ImageProcessor = exports.ImageProcessor = function () {
 		}
 
 		/**
-   * Applies three filters(brghtns, sat, desat) one-by-one on the image
-   * loaded in the canvas
+   * Applies three filters(brightness, sat, desat) on the image
    *
    * @param  {Number} brightness The amount of brightness to apply
    * @param  {Number} saturation The amount of saturation to apply
@@ -267,6 +341,100 @@ var ImageProcessor = exports.ImageProcessor = function () {
 			this.setBrightness(brightness);
 			this.saturate(saturation);
 			this.desaturate(desat);
+		}
+
+		/**
+   * Detects all the edges of the specified image
+   *
+   * @param  {Number} factor Grain factor
+   * @param  {Array}  The color of the edges marked
+   */
+
+	}, {
+		key: 'edgeMapping',
+		value: function edgeMapping(factor, rgba) {
+			var _this3 = this;
+
+			var diffIsHigh = function diffIsHigh(value) {
+				return value > 2.55 * factor;
+			};
+
+			this.colorMapping(function (i, pixels) {
+				var horizontalDiff = Math.abs(pixels[i + 4] - pixels[i]);
+				var verticalDiff = Math.abs(pixels[i + 4 * _this3.$canvas.width] - pixels[i]);
+
+				if (diffIsHigh(horizontalDiff) || diffIsHigh(verticalDiff)) {
+					pixels[i] = rgba[0];
+					pixels[i + 1] = rgba[1];
+					pixels[i + 2] = rgba[2];
+					pixels[i + 3] = rgba[3];
+				} else pixels[i + 3] = 0;
+			});
+		}
+
+		/**
+   * Finds the average intensity of all the pixels on the canvas
+   * 
+   * @return {Number}  Average Intensity
+   */
+
+	}, {
+		key: 'getAverageIntensity',
+		value: function getAverageIntensity() {
+			var _this4 = this;
+
+			var totalIntensity = 0;
+			var numberOfPixels = this.$canvas.width * this.$canvas.height;
+
+			this.colorMapping(function (i, pixels) {
+				totalIntensity += _this4.colorIntensity(pixels[i], pixels[i + 1], pixels[i + 2]);
+			});
+
+			return totalIntensity / numberOfPixels;
+		}
+
+		/**
+   * Applies the required filter adjusted for intensity
+   */
+
+	}, {
+		key: 'edgeDetection',
+		value: function edgeDetection() {
+			var intensity = this.getAverageIntensity();
+
+			var factor = this.edgeDetectionFactor(intensity);
+			var brightness = this.brightnessFactor(intensity);
+
+			this.customFilter(brightness, 0, 1);
+			this.edgeMapping(factor, [255, 0, 0, 255]);
+		}
+
+		/**
+   * Finds the brightness required mapped to the intensity
+   * 
+   * @param  {Number} intensity Average intensity of image
+   * 
+   * @return {Number}           Brightness required
+   */
+
+	}, {
+		key: 'brightnessFactor',
+		value: function brightnessFactor(intensity) {
+			return (MAX_BRIGHT - MIN_BRIGHT) * (intensity - MIN_INTENSITY) / (MAX_INTENSITY - MIN_INTENSITY) + MIN_BRIGHT;
+		}
+
+		/**
+   * Finds the edge detection factor required mapped to the intensity
+   * 
+   * @param  {Number} intensity Average intensity of image
+   * 
+   * @return {Number}           Edge detection factor required
+   */
+
+	}, {
+		key: 'edgeDetectionFactor',
+		value: function edgeDetectionFactor(intensity) {
+			return (MAX_FACTOR - MIN_FACTOR) * (intensity - MIN_INTENSITY) / (MAX_INTENSITY - MIN_INTENSITY) + MIN_FACTOR;
 		}
 	}]);
 

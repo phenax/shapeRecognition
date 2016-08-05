@@ -9,9 +9,15 @@ import { ImageProcessor } from './ImageProcessor';
 
 
 export class EdgeDetector {
+
+	/**
+	 * EdgeDetector
+	 * 
+	 * @param  {Object} config  Configuration
+	 */
 	constructor(config) {
 		this.$canvas= config.canvas;
-        this.ctx= this.$canvas.getContext('2d');
+		this.ctx= this.$canvas.getContext('2d');
 		this.dimen= config.dimen;
 		this.isWebCam= false;
 
@@ -34,10 +40,14 @@ export class EdgeDetector {
 
 		this.setDimensions();
 
-        this.renderImage= this.renderImage.bind(this);
+		this.renderVideo= this.renderVideo.bind(this);
 	}
 
 
+
+	/**
+	 * Sets the canvas and $video element dimensions
+	 */
 	setDimensions() {
 		this.$canvas.width= this.dimen.width;
 		this.$canvas.height= this.dimen.height;
@@ -49,19 +59,29 @@ export class EdgeDetector {
 	}
 
 
+
+	/**
+	 * Starts rendering
+	 */
 	start() {
 		if(this.isWebCam) {
 			this.callWebCam(()=> {
-                window.requestAnimationFrame(this.renderImage);
-            });
-        }
+				window.requestAnimationFrame(this.renderVideo);
+			});
+		}
 
-        this.image= new ImageProcessor({
-            canvas: this.$canvas
-        });
+		this.image= new ImageProcessor({
+			canvas: this.$canvas
+		});
 	}
 
 
+
+	/**
+	 * Asks permission for the webcam
+	 * 
+	 * @param  {Function} callback  Callback fired when access is granted
+	 */
 	callWebCam(callback) {
 
 		// Broswer prefixes
@@ -70,38 +90,41 @@ export class EdgeDetector {
 			navigator.webkitGetUserMedia ||
 			navigator.mozGetUserMedia;
 
-        // Ask for permissions
+		// Ask for permissions
 		navigator.getUserMedia(
 
-            // No need for audio
-            { audio: false, video: this.dimen},
+			// No need for audio
+			{ audio: false, video: this.dimen},
 
-            // User allowed access
-    		(stream)=> {
-    			const dataUrl= window.URL.createObjectURL(stream);
+			// User allowed access
+			(stream)=> {
+				const dataUrl= window.URL.createObjectURL(stream);
 
-    			this.$video.src= dataUrl;
+				this.$video.src= dataUrl;
 
-                callback();
-    		},
+				callback();
+			},
 
-            // Error(user denied access)
-    		(err)=> {
-    			throw new Error("Something went wrong.");
-    		}
-        );
+			// Error(user denied access)
+			(err)=> {
+				throw new Error("Something went wrong.");
+			}
+		);
 	}
 
 
-    renderImage() {
-        this.ctx.drawImage(this.$video, 0, 0, this.dimen.width, this.dimen.height);
+	/**
+	 * Renders the video on the canvas
+	 */
+	renderVideo() {
+		this.ctx.drawImage(this.$video, 0, 0, this.dimen.width, this.dimen.height);
 
-        this.image.reload();
+		this.image.reload();
 
-        this.image.customFilter(4.5, 0, 1);
+		this.image.edgeDetection();
 
-        this.image.renderMap();
+		this.image.renderMap();
 
-    	window.requestAnimationFrame(this.renderImage);
-    }
+		window.requestAnimationFrame(this.renderVideo);
+	}
 }
